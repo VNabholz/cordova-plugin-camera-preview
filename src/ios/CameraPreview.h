@@ -1,11 +1,14 @@
 #import <Cordova/CDV.h>
 #import <Cordova/CDVPlugin.h>
 #import <Cordova/CDVInvokedUrlCommand.h>
+#import <CoreMotion/CoreMotion.h>
+#import <CoreLocation/CoreLocation.h>
 
 #import "CameraSessionManager.h"
 #import "CameraRenderController.h"
 
-@interface CameraPreview : CDVPlugin <TakePictureDelegate, FocusDelegate>
+
+@interface CameraPreview : CDVPlugin <TakePictureDelegate, FocusDelegate, CLLocationManagerDelegate>
 
 - (void) startCamera:(CDVInvokedUrlCommand*)command;
 - (void) stopCamera:(CDVInvokedUrlCommand*)command;
@@ -37,15 +40,24 @@
 - (void) getSupportedWhiteBalanceModes:(CDVInvokedUrlCommand*)command;
 - (void) getWhiteBalanceMode:(CDVInvokedUrlCommand*)command;
 - (void) setWhiteBalanceMode:(CDVInvokedUrlCommand*)command;
-
 - (void) invokeTakePicture:(CGFloat) width withHeight:(CGFloat) height withQuality:(CGFloat) quality;
 - (void) invokeTakePicture;
-
 - (void) invokeTapToFocus:(CGPoint) point;
 
 @property (nonatomic) CameraSessionManager *sessionManager;
 @property (nonatomic) CameraRenderController *cameraRenderController;
 @property (nonatomic) NSString *onPictureTakenHandlerId;
 @property (nonatomic) BOOL storeToFile;
+@property (strong, nonatomic) CMMotionManager *motionManager;
+@property (strong, nonatomic) CLLocationManager *locationManager;
+@property (nonatomic) double x;
+@property (nonatomic) double y;
+@property (nonatomic) double z;
+@property (nonatomic) int orientation;
+@property (nonatomic) int camera_x;
+@property (nonatomic) int camera_y;
+@property (nonatomic) int camera_width;
+@property (nonatomic) int camera_height;
+
 
 @end
