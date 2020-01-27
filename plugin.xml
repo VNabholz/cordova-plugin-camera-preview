@@ -19,6 +19,11 @@
     <source-file src="src/android/CustomSurfaceView.java" target-dir="src/com/cordovaplugincamerapreview" />
     <source-file src="src/android/Preview.java" target-dir="src/com/cordovaplugincamerapreview" />
     <source-file src="src/android/TapGestureDetector.java" target-dir="src/com/cordovaplugincamerapreview" />
+    <source-file src="src/android/MovementDetector.java" target-dir="src/com/cordovaplugincamerapreview" />a
+    <source-file src="src/android/CameraLocationListener.java" target-dir="src/com/cordovaplugincamerapreview" />a
+    <source-file src="src/android/CameraLocationServices.java" target-dir="src/com/cordovaplugincamerapreview" />a
+    <source-file src="src/android/GApiUtils.java" target-dir="src/com/cordovaplugincamerapreview" />a
+    <source-file src="src/android/LocationUtils.java" target-dir="src/com/cordovaplugincamerapreview" />a
     <source-file src="src/android/camera_activity.xml" target-dir="res/layout" />
     <source-file src="src/android/camera_theme.xml" target-dir="res/values" />
     <source-file src="src/android/camera_ids.xml" target-dir="res/values" />
