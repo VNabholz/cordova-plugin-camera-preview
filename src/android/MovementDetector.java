@@ -66,6 +66,7 @@ public class MovementDetector extends CordovaPlugin implements SensorEventListen
   public void stop() {
     try {
       sensorMan.unregisterListener(this);
+      mListeners.clear();
     } catch (Exception e) {
 
       Log.e(TAG, "Asta e cu eroare!");
@@ -99,20 +100,23 @@ public class MovementDetector extends CordovaPlugin implements SensorEventListen
     float magnitude = X * X + Y * Y;
     int tempOrientRounded = 0;
 
-
     // Don't trust the angle if the magnitude is small compared to the y value
     if (magnitude * 4 >= Z * Z) {
       float OneEightyOverPi = 57.29577957855f;
       float angle = (float) Math.atan2(-Y, X) * OneEightyOverPi;
       orientation = 90 - (int) Math.round(angle);
+
       // normalize to 0 - 359 range
       while (orientation >= 360) {
         orientation -= 360;
       }
+
       while (orientation < 0) {
         orientation += 360;
       }
+
     }
+
     //^^ thanks to google for that code
     //now we must figure out which orientation based on the degrees
 
@@ -124,18 +128,24 @@ public class MovementDetector extends CordovaPlugin implements SensorEventListen
       } else if (orientation <= 45 || orientation > 315) {//round to 0
         tempOrientRounded = 1;//portrait
       } else if (orientation > 45 && orientation <= 135) {//round to 90
-        tempOrientRounded = 2; //lsleft
+        tempOrientRounded = 4; //lsleft huawei
+//        tempOrientRounded = 2; //lsleft samsung
       } else if (orientation > 135 && orientation <= 225) {//round to 180
         tempOrientRounded = 3; //upside down
       } else if (orientation > 225 && orientation <= 315) {//round to 270
-        tempOrientRounded = 4;//lsright
+        tempOrientRounded = 2;//lsright
+//        tempOrientRounded = 4;//lsright
       }
     }
+
+
+//    Log.e("ALEX_CAMERA", "Se apeleaza functia minute: " + String.valueOf((mOrientationRounded - 1) * 90));
 
     if (tempOrientRounded != 0 && mOrientationRounded != tempOrientRounded) {
       //Orientation changed, handle the change here
       mOrientationRounded = tempOrientRounded;
       for (Listener listener : mListeners) {
+        Log.e("ALEX_CAMERA", "Astea sunt gradele pe care le da giroscopul - " + String.valueOf((mOrientationRounded - 1) * 90));
         listener.onMotionDetected((mOrientationRounded - 1) * 90);
       }
     }
