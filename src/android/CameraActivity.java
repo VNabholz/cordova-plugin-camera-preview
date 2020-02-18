@@ -119,7 +119,6 @@ public class CameraActivity extends Fragment {
         startMotionSensor();
         appResourcesPackage = getActivity().getPackageName();
 
-
         // Inflate the layout for this fragment
         view = inflater.inflate(getResources().getIdentifier("camera_activity", "layout", appResourcesPackage), container, false);
         createCameraPreview();
@@ -131,13 +130,11 @@ public class CameraActivity extends Fragment {
         /**
          * There is required some refactoring for a better implementation.
          */
-        Log.e("ALEX_CAMERA", "Bai, dar asta de cate ori se ruleaza?");
 
         MovementDetector.getInstance(getActivity().getApplicationContext()).addListener(new MovementDetector.Listener() {
             @Override
             public void onMotionDetected(int degrees) {
                 cameraPositionDegrees = degrees;
-                Log.d("ALEX_CAMERA", "cameraPositionDegrees" + String.valueOf(cameraPositionDegrees));
                 getCorrectCameraOrientation();
 
             }
@@ -386,48 +383,19 @@ public class CameraActivity extends Fragment {
     public void getCorrectCameraOrientation() {
 
         int orientation = mPreview.nativeOrientation;
-        Log.e("ALEX_CAMERA", String.valueOf(mPreview.facing) + " - Pozitia camerei fata de telefon: " + String.valueOf(orientation) + " Pozitia corecta a telefonului: " + String.valueOf(cameraPositionDegrees));
-
 
         if (mPreview.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
             cameraPositionDegrees = (360 - cameraPositionDegrees) % 360;
             cameraPosition = (orientation + cameraPositionDegrees) % 360;
             cameraPosition = (360 - cameraPosition) % 360;  // compensate the mirror
 
-            Log.e("ALEX_CAMERA", "(orientation + cameraPositionDegrees): " + String.valueOf(orientation + cameraPositionDegrees));
-            Log.e("ALEX_CAMERA", "Primul calcul al camerei! " + String.valueOf(cameraPosition));
-            Log.e("ALEX_CAMERA", "Al doilea calcul al camerei! " + String.valueOf(cameraPosition));
-
         } else {  // back-facing
             cameraPosition = (orientation - cameraPositionDegrees + 360) % 360;
         }
 
-        Log.e("ALEX_CAMERA", "Asta ar trebui sa fie pozitia finala " + String.valueOf(cameraPosition));
-
     }
 
 
-    /**
-     * This is the right code for lg and Oneplus.
-     */
-//    public void getCorrectCameraOrientation() {
-//
-//
-//        Log.e("ALEX_CAMERA", "Vrea sa ia orientarea corecta " + String.valueOf(mPreview.nativeOrientation));
-//
-//
-//        int orientation = mPreview.nativeOrientation;
-//
-//        if (mPreview.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-//            cameraPosition = (orientation + cameraPositionDegrees) % 360;
-//            cameraPosition = (360 - cameraPosition) % 360; // compensate the mirror
-//        } else {
-//            cameraPosition = ((cameraPositionDegrees - orientation) + 180 + 360) % 360;
-//        }
-//
-//        Log.e("ALEX_CAMERA", "Asta ar trebui sa fie pozitia finala " + String.valueOf(cameraPosition));
-//
-//    }
     public void switchCamera() {
         // Find the total number of cameras available
         numberOfCameras = Camera.getNumberOfCameras();
@@ -480,13 +448,7 @@ public class CameraActivity extends Fragment {
             stopMotionSensor();
             enableMotionSensor();
             mPreview.switchCamera(mCamera, cameraCurrentlyLocked);
-
-            Log.e("ALEX_CAMERA", "Camera cu valoarea veche - " + String.valueOf(cameraPosition));
-
             getCorrectCameraOrientation();
-
-            Log.e("ALEX_CAMERA", "Camera are o noua orientare acum - " + String.valueOf(cameraPosition));
-
             startMotionSensor();
 
             mCamera.startPreview();
@@ -553,21 +515,12 @@ public class CameraActivity extends Fragment {
                         matrix.preScale(1.0f, -1.0f);
                     }
 
-//                    matrix.preRotate(cameraPosition);
-//                    matrix.preRotate(180);
-
-                        Log.d("ALEX_CAMERA", "jpegPictureCallback - de unde se mai invarte inca odata poza.");
-
+                    ExifInterface exifInterface = new ExifInterface(new ByteArrayInputStream(data));
+                    int rotation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+                    int rotationInDegrees = exifToDegrees(rotation);
 
 
-//                    ExifInterface exifInterface = new ExifInterface(new ByteArrayInputStream(data));
-//                    int rotation = exifInterface.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
-//                    int rotationInDegrees = exifToDegrees(rotation);
-//
-//                    if (rotation != 0f) {
-//                        matrix.preRotate(rotationInDegrees);
-//                    }
-
+                    matrix.preRotate(cameraPosition);
 
                     // Check if matrix has changed. In that case, apply matrix and override data
                     if (!matrix.isIdentity()) {
@@ -756,10 +709,8 @@ public class CameraActivity extends Fragment {
                 try {
                     Camera.Parameters parameters = camera.getParameters();
                     Camera.Size size = parameters.getPreviewSize();
-//                    int orientation = cameraPositionDegrees; // TODO: Check here if the new var is used ok.
                     int orientation = mPreview.getDisplayOrientation();
 
-                    Log.d("ALEX_CAMERA", "takeSnapshot - are legatura cu orientarea");
 
                     if (mPreview.getCameraFacing() == Camera.CameraInfo.CAMERA_FACING_FRONT) {
                         bytes = rotateNV21(bytes, size.width, size.height, (360 - orientation) % 360);
@@ -812,12 +763,6 @@ public class CameraActivity extends Fragment {
                     } else {
                         params.setJpegQuality(quality);
                     }
-
-//                    params.setRotation(cameraPosition);
-//                    params.setRotation(90);
-                    Log.e("ALEX_CAMERA", "AICI setez rotatia camerei care e si in poza - " + String.valueOf(cameraPosition));
-//                    params.setRotation(0);
-//           params.setRotation(mPreview.getDisplayOrientation());
 
                     mCamera.setParameters(params);
                     mCamera.takePicture(shutterCallback, null, jpegPictureCallback);

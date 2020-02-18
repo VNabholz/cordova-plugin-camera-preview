@@ -114,10 +114,6 @@ class Preview extends RelativeLayout implements SurfaceHolder.Callback {
                 break;
         }
 
-
-        Log.e("ALEX_CAMERA", "Codul vechi care detecteaza rotatia telefonului: " + String.valueOf(degrees));
-
-
         facing = info.facing;
         if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
             displayOrientation = (info.orientation + degrees) % 360;

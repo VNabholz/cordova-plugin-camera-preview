@@ -250,7 +250,6 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
         CameraLocationServices.getInstance(cordova, callbackContext).addListener(new CameraLocationServices.Listener() {
             @Override
             public void getCoordonates(Location location) {
-                Log.d("CDVNativeGeolocPlugin", "De unde trebuie!latitude" + String.valueOf(location.getLatitude()) + " longitude" + String.valueOf(location.getLongitude()));
                 fragment.setLocation(location);
             }
         });
@@ -284,8 +283,6 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
         cordova.getActivity().runOnUiThread(new Runnable() {
             @Override
             public void run() {
-
-
                 //create or update the layout params for the container view
                 FrameLayout containerView = (FrameLayout) cordova.getActivity().findViewById(containerViewId);
                 if (containerView == null) {
