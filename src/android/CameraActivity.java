@@ -366,12 +366,10 @@ public class CameraActivity extends Fragment {
         stopMotionSensor();
 
         // Because the Camera object is a shared resource, it's very important to release it when the activity is paused.
+        // The camera release it was here but now I moved the release to be executed when the surface is distroyed.
+
         if (mCamera != null) {
             setDefaultCameraId();
-            mPreview.setCamera(null, -1);
-            mCamera.setPreviewCallback(null);
-            mCamera.release();
-            mCamera = null;
         }
     }
 

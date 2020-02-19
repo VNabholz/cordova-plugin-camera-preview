@@ -240,6 +240,12 @@ class Preview extends RelativeLayout implements SurfaceHolder.Callback {
         try {
             if (mCamera != null) {
                 mCamera.stopPreview();
+
+                setCamera(null, -1);
+                mCamera.setPreviewCallback(null);
+                mCamera.release();
+                mCamera = null;
+
             }
         } catch (Exception exception) {
             Log.e(TAG, "Exception caused by surfaceDestroyed()", exception);
