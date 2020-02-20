@@ -1,7 +1,7 @@
 # Changelog
 
-## MASTER BRANCH (RECOMMENDED) - UNRELEASED
-
+## v0.12 - February 19, 2019 - LATEST RELEASED VERSION
+- Implemented a lot of new functionalities: Exif, GPS, device motion.
 - [PR #582](https://github.com/cordova-plugin-camera-preview/cordova-plugin-camera-preview/pull/582) - Add support for Android devices without Autofocus which can increase the amount of devices for which app installation is allowed by about (~4k at time of)
 - [PR #583](https://github.com/cordova-plugin-camera-preview/cordova-plugin-camera-preview/pull/583) - Fix typescript error CameraPreview.d.ts is not a module 
 
