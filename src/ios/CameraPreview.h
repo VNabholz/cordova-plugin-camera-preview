@@ -43,6 +43,7 @@
 - (void) invokeTakePicture:(CGFloat) width withHeight:(CGFloat) height withQuality:(CGFloat) quality;
 - (void) invokeTakePicture;
 - (void) invokeTapToFocus:(CGPoint) point;
+- (void) saveImageToGallery:(CDVInvokedUrlCommand*)command;
 
 @property (nonatomic) CameraSessionManager *sessionManager;
 @property (nonatomic) CameraRenderController *cameraRenderController;

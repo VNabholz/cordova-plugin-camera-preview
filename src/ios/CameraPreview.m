@@ -956,5 +956,19 @@
     }
 }
 
+- (void) saveImageToGallery:(CDVInvokedUrlCommand*)command {
+   CDVPluginResult *pluginResult;
+   NSString * filePath = [command.arguments objectAtIndex:0];
+
+   @try {
+     UIImageWriteToSavedPhotosAlbum([UIImage imageWithContentsOfFile:filePath], nil, nil, nil);
+     pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:@"true" ];
+   }
+   @catch (NSException *exception) {
+     pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Session not started"];
+   }
+
+   [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
+}
 
 @end

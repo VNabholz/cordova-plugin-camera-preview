@@ -17,7 +17,7 @@ CameraPreview.startCamera = function(options, onSuccess, onError) {
         onSuccess = options;
         options = {};
     }
-  
+
     options.x = options.x || 0;
     options.y = options.y || 0;
     options.width = options.width || window.screen.width;
@@ -228,6 +228,10 @@ CameraPreview.getBlob = function(url, onSuccess, onError) {
 
 CameraPreview.getCameraCharacteristics = function(onSuccess, onError) {
     exec(onSuccess, onError, PLUGIN_NAME, "getCameraCharacteristics", []);
+};
+
+CameraPreview.saveImageToGallery = function(filePath, onSuccess, onError) {
+  exec(onSuccess, onError, PLUGIN_NAME, "saveImageToGallery", [filePath]);
 };
 
 CameraPreview.FOCUS_MODE = {

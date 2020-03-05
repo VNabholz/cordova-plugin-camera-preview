@@ -1,6 +1,8 @@
 package com.cordovaplugincamerapreview;
 
 import android.Manifest;
+import android.content.ContentResolver;
+import android.content.ContentValues;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.app.FragmentManager;
@@ -9,6 +11,8 @@ import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
 import android.hardware.camera2.CameraCharacteristics;
 import android.hardware.camera2.CameraManager;
+import android.net.Uri;
+import android.provider.MediaStore;
 import android.util.DisplayMetrics;
 import android.util.Log;
 import android.util.Size;
@@ -27,6 +31,8 @@ import org.json.JSONObject;
 import org.json.JSONArray;
 import org.json.JSONException;
 
+import java.io.FileInputStream;
+import java.io.OutputStream;
 import java.util.List;
 import java.util.Arrays;
 
@@ -67,6 +73,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     private static final String SET_WHITE_BALANCE_MODE_ACTION = "setWhiteBalanceMode";
     private static final String SET_BACK_BUTTON_CALLBACK = "onBackButton";
     private static final String GET_CAMERA_CHARACTERISTICS_ACTION = "getCameraCharacteristics";
+    private static final String SAVE_IMAGE_TO_GALLERY_ACTION = "saveImageToGallery";
 
     private static final int CAM_REQ_CODE = 0;
 
@@ -171,6 +178,8 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
             return getSupportedColorEffects(callbackContext);
         } else if (GET_CAMERA_CHARACTERISTICS_ACTION.equals(action)) {
             return getCameraCharacteristics(callbackContext);
+        } else if (SAVE_IMAGE_TO_GALLERY_ACTION.equals(action)) {
+            return saveImageToGallery(args.getString(0), callbackContext);
         }
         return false;
     }
@@ -1058,4 +1067,73 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
         return true;
     }
 
+
+    public boolean saveImageToGallery(String imagePath, CallbackContext callbackContext) {
+        if (this.hasCamera(callbackContext) == false) {
+            callbackContext.error("No camera found");
+        }
+
+        ContentResolver cr = this.cordova.getActivity().getApplicationContext().getContentResolver();
+
+        String title = "Saved From Glance";
+        String description = title;
+
+        ContentValues values = new ContentValues();
+        values.put(MediaStore.Images.Media.TITLE, title);
+        values.put(MediaStore.Images.Media.DISPLAY_NAME, title);
+        values.put(MediaStore.Images.Media.DESCRIPTION, description);
+        values.put(MediaStore.Images.Media.MIME_TYPE, "image/jpeg");
+        // Add the date meta data to ensure the image is added at the front of the gallery
+        long millis = System.currentTimeMillis();
+        values.put(MediaStore.Images.Media.DATE_ADDED, millis / 1000L);
+        values.put(MediaStore.Images.Media.DATE_MODIFIED, millis / 1000L);
+        values.put(MediaStore.Images.Media.DATE_TAKEN, millis);
+
+        Uri url = null;
+
+        try {
+            url = cr.insert(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, values);
+
+            if (imagePath != null) {
+                final int BUFFER_SIZE = 1024;
+
+                FileInputStream fileStream = new FileInputStream(imagePath);
+                try {
+                    OutputStream imageOut = cr.openOutputStream(url);
+                    try {
+                        byte[] buffer = new byte[BUFFER_SIZE];
+                        while (true) {
+                            int numBytesRead = fileStream.read(buffer);
+                            if (numBytesRead <= 0) {
+                                break;
+                            }
+                            imageOut.write(buffer, 0, numBytesRead);
+                        }
+                    } finally {
+                        imageOut.close();
+                    }
+                } finally {
+                    fileStream.close();
+                }
+
+
+                callbackContext.success("true");
+
+            } else {
+                cr.delete(url, null, null);
+                callbackContext.error("The image path is null");
+            }
+        } catch (Exception e) {
+            if (url != null) {
+                cr.delete(url, null, null);
+                callbackContext.error("An unknown error has occurred");
+            }
+        }
+
+
+        return true;
+    }
+
+
 }
+
