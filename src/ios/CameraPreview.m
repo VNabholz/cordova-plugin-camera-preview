@@ -827,13 +827,33 @@
                     longitudeRef = @"W";
                 }
 
-                  NSNumber* timestamp = [NSNumber numberWithDouble:([self.locationManager.location.timestamp timeIntervalSince1970] * 1000)];
-                [GPSDictionary setValue:timestamp forKey:(NSString*)kCGImagePropertyGPSTimeStamp];
+
+                NSTimeInterval timeInterval=[self.locationManager.location.timestamp timeIntervalSince1970];
+                NSDate *date = [NSDate dateWithTimeIntervalSince1970:timeInterval];
+
+                NSDateFormatter *dateTimeformatter=[[NSDateFormatter alloc]init];
+                [dateTimeformatter setDateFormat:@"yyyy:MM:dd HH:mm:ss"];
+
+                NSDateFormatter *dateformatter=[[NSDateFormatter alloc]init];
+                [dateformatter setDateFormat:@"yyyy:MM:dd"];
+
+                NSDateFormatter *timeformatter=[[NSDateFormatter alloc]init];
+                [timeformatter setDateFormat:@"HH:mm:ss.SS"];
+
+                NSString *dateTimeString=[dateTimeformatter stringFromDate:date];
+                NSString *dateString=[dateformatter stringFromDate:date];
+                NSString *timeString=[timeformatter stringFromDate:date];
+
+                [GPSDictionary setObject:[timeformatter stringFromDate:date] forKey:(NSString*)kCGImagePropertyGPSTimeStamp];
+                [GPSDictionary setObject:[dateformatter stringFromDate:date] forKey:(NSString*)kCGImagePropertyGPSDateStamp];
+
                 [GPSDictionary setValue:[NSNumber numberWithFloat:latitude] forKey:(NSString*)kCGImagePropertyGPSLatitude];
                 [GPSDictionary setValue:[NSNumber numberWithFloat:longitude] forKey:(NSString*)kCGImagePropertyGPSLongitude];
                 [GPSDictionary setValue:latitudeRef forKey:(NSString*)kCGImagePropertyGPSLatitudeRef];
                 [GPSDictionary setValue:longitudeRef forKey:(NSString*)kCGImagePropertyGPSLongitudeRef];
                 [GPSDictionary setValue:[NSNumber numberWithFloat:self.locationManager.location.altitude] forKey:(NSString*)kCGImagePropertyGPSAltitude];
+
+                [EXIFDictionary setValue:dateTimeString forKey:(NSString*)kCGImagePropertyExifDateTimeOriginal];
 
                 //add our modified EXIF data back into the image’s metadata
                 [metadataAsMutable setObject:EXIFDictionary forKey:(NSString *)kCGImagePropertyExifDictionary];
