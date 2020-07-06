@@ -8,7 +8,6 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.location.Location;
-import android.media.ExifInterface;
 import android.util.Base64;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -35,6 +34,7 @@ import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.RelativeLayout;
+import androidx.exifinterface.media.ExifInterface;
 
 import org.apache.cordova.LOG;
 
@@ -531,41 +531,36 @@ public class CameraActivity extends Fragment {
 
                     eventListener.onPictureTaken(encodedImage);
                 } else {
-                    String path = getTempFilePath();
                     FileOutputStream out = new FileOutputStream(path);
                     out.write(data);
                     out.close();
                     eventListener.onPictureTaken(path);
 
-                    ExifInterface exifInterface = new ExifInterface(path);
-                    double latitude = location.getLatitude();
-                    double longitude = location.getLongitude();
-                    double altitude = location.getAltitude();
-
                     SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                    String dateTime = dateFormat.format(Calendar.getInstance().getTime());
+                    String[] dateSplitted = dateTime.split(" ");
 
-                    long dateTimestamp = location.getTime();
+                    ExifInterface exifInterface = new ExifInterface(path);
+                    exifInterface.setAttribute(ExifInterface.TAG_DATETIME_ORIGINAL, dateTime);
 
-                    if (dateTimestamp > 0) {
-                        String dateTime = dateFormat.format(dateTimestamp);
-                        String[] dateSplitted = dateTime.split(" ");
-
-                        exifInterface.setAttribute(ExifInterface.TAG_DATETIME_ORIGINAL, dateTime);
-
-                        if (dateSplitted.length == 2) {
-                            exifInterface.setAttribute(ExifInterface.TAG_GPS_DATESTAMP, dateSplitted[0]);
-                            exifInterface.setAttribute(ExifInterface.TAG_GPS_TIMESTAMP, dateSplitted[1]);
-                        }
+                    if (dateSplitted.length == 2) {
+                        exifInterface.setAttribute(ExifInterface.TAG_GPS_DATESTAMP, dateSplitted[0]);
+                        exifInterface.setAttribute(ExifInterface.TAG_GPS_TIMESTAMP, dateSplitted[1]);
                     }
 
+                    if(location != null) {
+                        double latitude = location.getLatitude();
+                        double longitude = location.getLongitude();
+                        double altitude = location.getAltitude();
 
-                    exifInterface.setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, latitude >= 0 ? "N" : "S");
-                    exifInterface.setAttribute(ExifInterface.TAG_GPS_LATITUDE, CameraLocationServices.getDms(latitude));
-                    exifInterface.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, CameraLocationServices.getDms(longitude));
-                    exifInterface.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, longitude >= 0 ? "E" : "W");
-                    exifInterface.setAttribute(ExifInterface.TAG_GPS_ALTITUDE, String.valueOf(altitude));
+                        exifInterface.setAttribute(ExifInterface.TAG_GPS_LATITUDE_REF, latitude >= 0 ? "N" : "S");
+                        exifInterface.setAttribute(ExifInterface.TAG_GPS_LATITUDE, CameraLocationServices.getDms(latitude));
+                        exifInterface.setAttribute(ExifInterface.TAG_GPS_LONGITUDE, CameraLocationServices.getDms(longitude));
+                        exifInterface.setAttribute(ExifInterface.TAG_GPS_LONGITUDE_REF, longitude >= 0 ? "E" : "W");
+                        exifInterface.setAttribute(ExifInterface.TAG_GPS_ALTITUDE, String.valueOf(altitude));
+                    }
+
                     exifInterface.saveAttributes();
-
                 }
 
             } catch (OutOfMemoryError e) {
@@ -703,7 +698,6 @@ public class CameraActivity extends Fragment {
                     Camera.Parameters parameters = camera.getParameters();
                     Camera.Size size = parameters.getPreviewSize();
                     int orientation = mPreview.getDisplayOrientation();
-
 
                     if (mPreview.getCameraFacing() == Camera.CameraInfo.CAMERA_FACING_FRONT) {
                         bytes = rotateNV21(bytes, size.width, size.height, (360 - orientation) % 360);

@@ -827,8 +827,7 @@
                     longitudeRef = @"W";
                 }
 
-
-                NSTimeInterval timeInterval=[self.locationManager.location.timestamp timeIntervalSince1970];
+                NSTimeInterval timeInterval = [[NSDate date] timeIntervalSince1970];
                 NSDate *date = [NSDate dateWithTimeIntervalSince1970:timeInterval];
 
                 NSDateFormatter *dateTimeformatter=[[NSDateFormatter alloc]init];
@@ -847,11 +846,13 @@
                 [GPSDictionary setObject:[timeformatter stringFromDate:date] forKey:(NSString*)kCGImagePropertyGPSTimeStamp];
                 [GPSDictionary setObject:[dateformatter stringFromDate:date] forKey:(NSString*)kCGImagePropertyGPSDateStamp];
 
-                [GPSDictionary setValue:[NSNumber numberWithFloat:latitude] forKey:(NSString*)kCGImagePropertyGPSLatitude];
-                [GPSDictionary setValue:[NSNumber numberWithFloat:longitude] forKey:(NSString*)kCGImagePropertyGPSLongitude];
-                [GPSDictionary setValue:latitudeRef forKey:(NSString*)kCGImagePropertyGPSLatitudeRef];
-                [GPSDictionary setValue:longitudeRef forKey:(NSString*)kCGImagePropertyGPSLongitudeRef];
-                [GPSDictionary setValue:[NSNumber numberWithFloat:self.locationManager.location.altitude] forKey:(NSString*)kCGImagePropertyGPSAltitude];
+                if(latitude != 0 && longitude != 0){
+                  [GPSDictionary setValue:[NSNumber numberWithFloat:latitude] forKey:(NSString*)kCGImagePropertyGPSLatitude];
+                  [GPSDictionary setValue:[NSNumber numberWithFloat:longitude] forKey:(NSString*)kCGImagePropertyGPSLongitude];
+                  [GPSDictionary setValue:latitudeRef forKey:(NSString*)kCGImagePropertyGPSLatitudeRef];
+                  [GPSDictionary setValue:longitudeRef forKey:(NSString*)kCGImagePropertyGPSLongitudeRef];
+                  [GPSDictionary setValue:[NSNumber numberWithFloat:self.locationManager.location.altitude] forKey:(NSString*)kCGImagePropertyGPSAltitude];
+                }
 
                 [EXIFDictionary setValue:dateTimeString forKey:(NSString*)kCGImagePropertyExifDateTimeOriginal];
 
