@@ -270,7 +270,7 @@ public class CameraLocationServices implements GoogleApiClient.ConnectionCallbac
     public void getGPSData(Location location) {
         globalLocation = location;
 
-        final int priority = LocationRequest.PRIORITY_HIGH_ACCURACY;
+        final int priority = LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY;
         final long interval = LocationUtils.UPDATE_INTERVAL_IN_MILLISECONDS;
         final long fastInterval = LocationUtils.FAST_INTERVAL_CEILING_IN_MILLISECONDS;
 
