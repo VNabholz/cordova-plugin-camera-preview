@@ -7,7 +7,7 @@
 #define TMP_IMAGE_PREFIX @"cpcp_capture_"
 
 @implementation CameraPreview
-@synthesize x, y, z, orientation, camera_x, camera_y,camera_width, camera_height;
+@synthesize x, y, z, orientation, camera_x, camera_y, camera_width, camera_height, latitude, longitude, altitude;
 
 // defaults to 100 msec
 #define kAccelerometerInterval 1000
@@ -111,21 +111,46 @@
             [self.locationManager requestWhenInUseAuthorization];
         }
 
-        [self.locationManager startUpdatingLocation];
+        [self.locationManager requestLocation];
 
         // Setup session
         self.sessionManager.delegate = self.cameraRenderController;
 
         [self.sessionManager setupSession:defaultCamera completion:^(BOOL started) {
-
             [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
-
         }];
 
     } else {
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Invalid number of parameters"];
         [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
     }
+}
+
+- (void)locationManager:(CLLocationManager *)manager didUpdateLocations:(NSArray *)locations {
+
+    self.latitude = self.locationManager.location.coordinate.latitude;
+    self.longitude = self.locationManager.location.coordinate.longitude;
+    self.altitude = self.locationManager.location.altitude;
+
+    self.latitudeRef = @"N";
+    self.longitudeRef = @"E";
+
+    if(self.latitude < 0.0) {
+        self.latitude *= -1.0f;
+        self.latitudeRef = @"S";
+    }
+
+    if(self.longitude < 0.0) {
+        self.longitude *= -1.0f;
+        self.longitudeRef = @"W";
+    }
+
+    [self.locationManager stopUpdatingLocation];
+}
+
+- (void)locationManager:(CLLocationManager *)manager
+       didFailWithError:(NSError *)error {
+    [self.locationManager stopUpdatingLocation];
 }
 
 - (void) stopCamera:(CDVInvokedUrlCommand*)command {
@@ -811,22 +836,6 @@
                     GPSDictionary = [NSMutableDictionary dictionary];
                 }
 
-                //Setup GPS
-                CLLocationDegrees latitude = self.locationManager.location.coordinate.latitude;
-                CLLocationDegrees longitude = self.locationManager.location.coordinate.longitude;
-                NSString *latitudeRef = @"N";
-                NSString *longitudeRef = @"E";
-
-                if(latitude < 0.0) {
-                    latitude *= -1.0f;
-                    latitudeRef = @"S";
-                }
-
-                if(longitude < 0.0) {
-                    longitude *= -1.0f;
-                    longitudeRef = @"W";
-                }
-
                 NSTimeInterval timeInterval = [[NSDate date] timeIntervalSince1970];
                 NSDate *date = [NSDate dateWithTimeIntervalSince1970:timeInterval];
 
@@ -840,18 +849,16 @@
                 [timeformatter setDateFormat:@"HH:mm:ss.SS"];
 
                 NSString *dateTimeString=[dateTimeformatter stringFromDate:date];
-                NSString *dateString=[dateformatter stringFromDate:date];
-                NSString *timeString=[timeformatter stringFromDate:date];
 
                 [GPSDictionary setObject:[timeformatter stringFromDate:date] forKey:(NSString*)kCGImagePropertyGPSTimeStamp];
                 [GPSDictionary setObject:[dateformatter stringFromDate:date] forKey:(NSString*)kCGImagePropertyGPSDateStamp];
 
-                if(latitude != 0 && longitude != 0){
-                  [GPSDictionary setValue:[NSNumber numberWithFloat:latitude] forKey:(NSString*)kCGImagePropertyGPSLatitude];
-                  [GPSDictionary setValue:[NSNumber numberWithFloat:longitude] forKey:(NSString*)kCGImagePropertyGPSLongitude];
-                  [GPSDictionary setValue:latitudeRef forKey:(NSString*)kCGImagePropertyGPSLatitudeRef];
-                  [GPSDictionary setValue:longitudeRef forKey:(NSString*)kCGImagePropertyGPSLongitudeRef];
-                  [GPSDictionary setValue:[NSNumber numberWithFloat:self.locationManager.location.altitude] forKey:(NSString*)kCGImagePropertyGPSAltitude];
+                if(self.latitude != 0 && self.longitude != 0){
+                    [GPSDictionary setValue:[NSNumber numberWithFloat:self.latitude] forKey:(NSString*)kCGImagePropertyGPSLatitude];
+                    [GPSDictionary setValue:[NSNumber numberWithFloat:self.longitude] forKey:(NSString*)kCGImagePropertyGPSLongitude];
+                    [GPSDictionary setValue:self.latitudeRef forKey:(NSString*)kCGImagePropertyGPSLatitudeRef];
+                    [GPSDictionary setValue:self.longitudeRef forKey:(NSString*)kCGImagePropertyGPSLongitudeRef];
+                  [GPSDictionary setValue:[NSNumber numberWithFloat:self.altitude] forKey:(NSString*)kCGImagePropertyGPSAltitude];
                 }
 
                 [EXIFDictionary setValue:dateTimeString forKey:(NSString*)kCGImagePropertyExifDateTimeOriginal];
