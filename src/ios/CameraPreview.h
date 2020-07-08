@@ -45,6 +45,10 @@
 - (void) invokeTapToFocus:(CGPoint) point;
 - (void) saveImageToGallery:(CDVInvokedUrlCommand*)command;
 
+- (void)enterBackgroundNotification:(NSNotification *)notification;
+- (void)enterForegroundNotification:(NSNotification *)notification;
+- (void) startMotionManager;
+
 @property (nonatomic) CameraSessionManager *sessionManager;
 @property (nonatomic) CameraRenderController *cameraRenderController;
 @property (nonatomic) NSString *onPictureTakenHandlerId;
@@ -59,6 +63,9 @@
 @property (nonatomic) int camera_y;
 @property (nonatomic) int camera_width;
 @property (nonatomic) int camera_height;
-
-
+@property (nonatomic) CLLocationDegrees latitude;
+@property (nonatomic) CLLocationDegrees longitude;
+@property (nonatomic) float altitude;
+@property (nonatomic) NSString *latitudeRef;
+@property (nonatomic) NSString *longitudeRef;
 @end

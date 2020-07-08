@@ -20,9 +20,17 @@
     self.webView.backgroundColor = [UIColor clearColor];
 }
 
-- (void) startCamera:(CDVInvokedUrlCommand*)command {
+- (void)enterBackgroundNotification:(NSNotification *)notification{
+     [self.locationManager stopUpdatingLocation];
+     [self.motionManager stopAccelerometerUpdates];
+}
 
-    CDVPluginResult *pluginResult;
+- (void)enterForegroundNotification:(NSNotification *)notification{
+    [self.locationManager requestLocation];
+    [self startMotionManager];
+}
+
+- (void)startMotionManager {
 
     if (!self.motionManager)
     {
@@ -40,6 +48,27 @@
             [weakSelf calculateDeviceOrientation];
         }];
     }
+}
+
+- (void) startCamera:(CDVInvokedUrlCommand*)command {
+
+    CDVPluginResult *pluginResult;
+
+    [self startMotionManager];
+
+    [[NSNotificationCenter defaultCenter]
+     addObserver:self
+     selector:@selector(enterBackgroundNotification:)
+     name:UIApplicationDidEnterBackgroundNotification
+     object:nil
+     ];
+
+    [[NSNotificationCenter defaultCenter]
+     addObserver:self
+     selector:@selector(enterForegroundNotification:)
+     name:UIApplicationWillEnterForegroundNotification
+     object:nil
+     ];
 
     if (self.sessionManager != nil) {
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera already started!"];
@@ -158,6 +187,10 @@
     CDVPluginResult *pluginResult;
 
     [self.locationManager stopUpdatingLocation];
+
+    [self.motionManager stopAccelerometerUpdates];
+
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 
     if(self.sessionManager != nil) {
         [self.cameraRenderController.view removeFromSuperview];
