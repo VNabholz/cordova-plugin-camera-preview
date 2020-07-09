@@ -350,6 +350,9 @@ class Preview extends RelativeLayout implements SurfaceHolder.Callback {
             try {
                 // Now that the size is known, set up the camera parameters and begin
                 // the preview.
+
+                this.switchCamera(mCamera, this.cameraId);
+
                 mSupportedPreviewSizes = mCamera.getParameters().getSupportedPreviewSizes();
                 if (mSupportedPreviewSizes != null) {
                     mPreviewSize = getOptimalPreviewSize(mSupportedPreviewSizes, w, h);
@@ -360,6 +363,7 @@ class Preview extends RelativeLayout implements SurfaceHolder.Callback {
                 //mCamera.setDisplayOrientation(90);
                 mCamera.setParameters(parameters);
                 mCamera.startPreview();
+
             } catch (Exception exception) {
                 Log.e(TAG, "Exception caused by surfaceChanged()", exception);
             }
