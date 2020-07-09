@@ -103,8 +103,7 @@ public class CameraActivity extends Fragment {
     public int height;
     public int x;
     public int y;
-    public int cameraPosition;
-    public int cameraPositionDegrees;
+
     public Location location;
 
     public void setEventListener(CameraPreviewListener listener) {
@@ -115,8 +114,6 @@ public class CameraActivity extends Fragment {
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
-        enableMotionSensor();
-        startMotionSensor();
         appResourcesPackage = getActivity().getPackageName();
 
         // Inflate the layout for this fragment
@@ -125,33 +122,8 @@ public class CameraActivity extends Fragment {
         return view;
     }
 
-
-    public void enableMotionSensor() {
-        /**
-         * There is required some refactoring for a better implementation.
-         */
-
-        MovementDetector.getInstance(getActivity().getApplicationContext()).addListener(new MovementDetector.Listener() {
-            @Override
-            public void onMotionDetected(int degrees) {
-                cameraPositionDegrees = degrees;
-                getCorrectCameraOrientation();
-
-            }
-        });
-
-    }
-
-    public void startMotionSensor() {
-        MovementDetector.getInstance(getActivity().getApplicationContext()).start();
-    }
-
-    public void stopMotionSensor() {
-        MovementDetector.getInstance(getActivity().getApplicationContext()).stop();
-    }
-
     public void setLocation(Location location) {
-        this.location = location;
+      this.location = location;
     }
 
     public void setRect(int x, int y, int width, int height) {
@@ -316,8 +288,6 @@ public class CameraActivity extends Fragment {
     public void onResume() {
         super.onResume();
 
-        startMotionSensor();
-
         mCamera = Camera.open(defaultCameraId);
 
         if (cameraParameters != null) {
@@ -363,8 +333,6 @@ public class CameraActivity extends Fragment {
     public void onPause() {
         super.onPause();
 
-        stopMotionSensor();
-
         // Because the Camera object is a shared resource, it's very important to release it when the activity is paused.
         // The camera release it was here but now I moved the release to be executed when the surface is distroyed.
 
@@ -376,23 +344,6 @@ public class CameraActivity extends Fragment {
     public Camera getCamera() {
         return mCamera;
     }
-
-
-    public void getCorrectCameraOrientation() {
-
-        int orientation = mPreview.nativeOrientation;
-
-        if (mPreview.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-            cameraPositionDegrees = (360 - cameraPositionDegrees) % 360;
-            cameraPosition = (orientation + cameraPositionDegrees) % 360;
-            cameraPosition = (360 - cameraPosition) % 360;  // compensate the mirror
-
-        } else {  // back-facing
-            cameraPosition = (orientation - cameraPositionDegrees + 360) % 360;
-        }
-
-    }
-
 
     public void switchCamera() {
         // Find the total number of cameras available
@@ -442,13 +393,7 @@ public class CameraActivity extends Fragment {
                 Log.d(TAG, "camera parameter NULL");
             }
 
-
-            stopMotionSensor();
-            enableMotionSensor();
             mPreview.switchCamera(mCamera, cameraCurrentlyLocked);
-            getCorrectCameraOrientation();
-            startMotionSensor();
-
             mCamera.startPreview();
         }
     }
@@ -513,7 +458,7 @@ public class CameraActivity extends Fragment {
                         matrix.preScale(1.0f, -1.0f);
                     }
 
-                    matrix.preRotate(cameraPosition);
+                    matrix.preRotate(mPreview.cameraPosition);
 
                     // Check if matrix has changed. In that case, apply matrix and override data
                     if (!matrix.isIdentity()) {

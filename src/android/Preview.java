@@ -34,6 +34,9 @@ class Preview extends RelativeLayout implements SurfaceHolder.Callback {
     int viewWidth;
     int viewHeight;
 
+  public int cameraPosition;
+  public int cameraPositionDegrees;
+
     Preview(Context context) {
         super(context);
 
@@ -48,6 +51,45 @@ class Preview extends RelativeLayout implements SurfaceHolder.Callback {
         mHolder.addCallback(this);
         mHolder.setType(SurfaceHolder.SURFACE_TYPE_PUSH_BUFFERS);
     }
+
+  public void enableMotionSensor() {
+    /**
+     * There is required some refactoring for a better implementation.
+     */
+
+    MovementDetector.getInstance(((Activity) getContext()).getApplicationContext()).addListener(new MovementDetector.Listener() {
+      @Override
+      public void onMotionDetected(int degrees) {
+        cameraPositionDegrees = degrees;
+        getCorrectCameraOrientation();
+
+      }
+    });
+
+  }
+
+  public void startMotionSensor() {
+    MovementDetector.getInstance(((Activity) getContext()).getApplicationContext()).start();
+  }
+
+  public void stopMotionSensor() {
+    MovementDetector.getInstance(((Activity) getContext()).getApplicationContext()).stop();
+  }
+
+
+  public void getCorrectCameraOrientation() {
+    int orientation = this.nativeOrientation;
+
+    if (this.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+      cameraPositionDegrees = (360 - cameraPositionDegrees) % 360;
+      cameraPosition = (orientation + cameraPositionDegrees) % 360;
+      cameraPosition = (360 - cameraPosition) % 360;  // compensate the mirror
+
+    } else {  // back-facing
+      cameraPosition = (orientation - cameraPositionDegrees + 360) % 360;
+    }
+
+  }
 
     public void setCamera(Camera camera, int cameraId) {
           mCamera = camera;
@@ -130,6 +172,9 @@ class Preview extends RelativeLayout implements SurfaceHolder.Callback {
 
     public void switchCamera(Camera camera, int cameraId) {
         try {
+            stopMotionSensor();
+            enableMotionSensor();
+
             setCamera(camera, cameraId);
 
             Log.d("CameraPreview", "before set camera");
@@ -148,6 +193,9 @@ class Preview extends RelativeLayout implements SurfaceHolder.Callback {
             Log.d(TAG, mPreviewSize.width + " " + mPreviewSize.height);
 
             camera.setParameters(parameters);
+
+            getCorrectCameraOrientation();
+            startMotionSensor();
         } catch (IOException exception) {
             Log.e(TAG, exception.getMessage());
         }
@@ -226,6 +274,10 @@ class Preview extends RelativeLayout implements SurfaceHolder.Callback {
     public void surfaceCreated(SurfaceHolder holder) {
         // The Surface has been created, acquire the camera and tell it where
         // to draw.
+
+      enableMotionSensor();
+      startMotionSensor();
+
         try {
             if (mCamera != null) {
                 mSurfaceView.setWillNotDraw(false);
