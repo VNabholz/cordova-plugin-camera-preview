@@ -531,6 +531,7 @@ public class CameraActivity extends Fragment {
 
                     eventListener.onPictureTaken(encodedImage);
                 } else {
+                    String path = getTempFilePath();
                     FileOutputStream out = new FileOutputStream(path);
                     out.write(data);
                     out.close();
