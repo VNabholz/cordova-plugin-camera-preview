@@ -1008,11 +1008,6 @@
 
     if (orientation != -1 && self.orientation != tempOrientRounded) {
         //Orientation changed, handle the change here
-        if(self.orientation == 0 && (tempOrientRounded == UIDeviceOrientationLandscapeRight || tempOrientRounded == UIDeviceOrientationLandscapeLeft)){
-            // calculate the first orientation! to set the device offset.
-            self.cameraRenderController.view.frame = CGRectMake(self.camera_x, self.camera_y + 20, self.camera_width, self.camera_height);
-        }
-
         self.orientation = tempOrientRounded;
     }
 }
