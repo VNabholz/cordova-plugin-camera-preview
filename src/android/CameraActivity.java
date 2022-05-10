@@ -8,6 +8,7 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.Bitmap.CompressFormat;
 import android.location.Location;
+import android.media.AudioManager;
 import android.util.Base64;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
@@ -18,9 +19,12 @@ import android.graphics.YuvImage;
 import android.hardware.Camera;
 import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.ShutterCallback;
+import android.media.CamcorderProfile;
+import android.media.MediaRecorder;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.DisplayMetrics;
+import android.util.Size;
 import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -72,6 +76,10 @@ public class CameraActivity extends Fragment {
     void onBackButton();
 
     void onCameraStarted();
+    void onStartRecordVideo();
+    void onStartRecordVideoError(String message);
+    void onStopRecordVideo(String file);
+    void onStopRecordVideoError(String error);
   }
 
   private CameraPreviewListener eventListener;
@@ -92,6 +100,7 @@ public class CameraActivity extends Fragment {
   // The first rear facing camera
   private int defaultCameraId;
   public String defaultCamera;
+
   public boolean tapToTakePicture;
   public boolean dragEnabled;
   public boolean tapToFocus;
@@ -106,7 +115,14 @@ public class CameraActivity extends Fragment {
 
   public Location location;
 
-  public void setEventListener(CameraPreviewListener listener) {
+  private enum RecordingState {INITIALIZING, STARTED, STOPPED}
+
+  private RecordingState mRecordingState = RecordingState.INITIALIZING;
+  private MediaRecorder mRecorder = null;
+  private String recordFilePath;
+
+  public void setEventListener(CameraPreviewListener listener){
+
     eventListener = listener;
   }
 
@@ -157,8 +173,7 @@ public class CameraActivity extends Fragment {
     }
   }
 
-  private void setupTouchAndBackButton() {
-
+  private void setupTouchAndBackButton(){
     final GestureDetector gestureDetector = new GestureDetector(getActivity().getApplicationContext(), new TapGestureDetector());
 
     getActivity().runOnUiThread(new Runnable() {
@@ -249,12 +264,12 @@ public class CameraActivity extends Fragment {
             return true;
           }
         });
+
         frameContainerLayout.setFocusableInTouchMode(true);
         frameContainerLayout.requestFocus();
         frameContainerLayout.setOnKeyListener(new android.view.View.OnKeyListener() {
           @Override
           public boolean onKey(android.view.View v, int keyCode, android.view.KeyEvent event) {
-
             if (keyCode == android.view.KeyEvent.KEYCODE_BACK) {
               eventListener.onBackButton();
               return true;
@@ -264,7 +279,6 @@ public class CameraActivity extends Fragment {
         });
       }
     });
-
   }
 
   private void setDefaultCameraId() {
@@ -339,6 +353,9 @@ public class CameraActivity extends Fragment {
     if (mCamera != null) {
       setDefaultCameraId();
     }
+
+    Activity activity = getActivity();
+    muteStream(false, activity);
   }
 
   public Camera getCamera() {
@@ -596,10 +613,7 @@ public class CameraActivity extends Fragment {
     return size;
   }
 
-  static byte[] rotateNV21(final byte[] yuv,
-                           final int width,
-                           final int height,
-                           final int rotation) {
+  static byte[] rotateNV21(final byte[] yuv, final int width, final int height, final int rotation){
     if (rotation == 0) return yuv;
     if (rotation % 90 != 0 || rotation < 0 || rotation > 270) {
       throw new IllegalArgumentException("0 <= rotation < 360, rotation % 90 == 0");
@@ -706,20 +720,147 @@ public class CameraActivity extends Fragment {
     }
   }
 
+  public void startRecord(final String filePath, final String camera, final int width, final int height, final int quality, final boolean withFlash){
+    Log.d(TAG, "CameraPreview startRecord camera: " + camera + " width: " + width + ", height: " + height + ", quality: " + quality);
+    if(mCamera != null) {
+      Activity activity = getActivity();
+      muteStream(true, activity);
+      if (this.mRecordingState == RecordingState.STARTED) {
+        Log.d(TAG, "Already Recording");
+        return;
+      }
+
+      this.recordFilePath = filePath;
+      int mOrientationHint = calculateOrientationHint();
+      int videoWidth = 0;//set whatever
+      int videoHeight = 0;//set whatever
+
+      Camera.Parameters cameraParams = mCamera.getParameters();
+      if (withFlash) {
+        cameraParams.setFlashMode(withFlash ? Camera.Parameters.FLASH_MODE_TORCH : Camera.Parameters.FLASH_MODE_OFF);
+        mCamera.setParameters(cameraParams);
+        mCamera.startPreview();
+      }
+
+      mCamera.unlock();
+      mRecorder = new MediaRecorder();
+
+      try {
+        mRecorder.setCamera(mCamera);
+
+        CamcorderProfile profile;
+        if (CamcorderProfile.hasProfile(defaultCameraId, CamcorderProfile.QUALITY_HIGH)) {
+          profile = CamcorderProfile.get(defaultCameraId, CamcorderProfile.QUALITY_HIGH);
+        } else {
+          if (CamcorderProfile.hasProfile(defaultCameraId, CamcorderProfile.QUALITY_480P)) {
+            profile = CamcorderProfile.get(defaultCameraId, CamcorderProfile.QUALITY_480P);
+          } else {
+            if (CamcorderProfile.hasProfile(defaultCameraId, CamcorderProfile.QUALITY_720P)) {
+              profile = CamcorderProfile.get(defaultCameraId, CamcorderProfile.QUALITY_720P);
+            } else {
+              if (CamcorderProfile.hasProfile(defaultCameraId, CamcorderProfile.QUALITY_1080P)) {
+                profile = CamcorderProfile.get(defaultCameraId, CamcorderProfile.QUALITY_1080P);
+              } else {
+                profile = CamcorderProfile.get(defaultCameraId, CamcorderProfile.QUALITY_LOW);
+              }
+            }
+          }
+        }
+
+
+        mRecorder.setAudioSource(MediaRecorder.AudioSource.VOICE_RECOGNITION);
+        mRecorder.setVideoSource(MediaRecorder.VideoSource.CAMERA);
+        mRecorder.setProfile(profile);
+        mRecorder.setOutputFile(filePath);
+        mRecorder.setOrientationHint(mOrientationHint);
+
+        mRecorder.prepare();
+        Log.d(TAG, "Starting recording");
+        mRecorder.start();
+        eventListener.onStartRecordVideo();
+      } catch (IOException e) {
+        eventListener.onStartRecordVideoError(e.getMessage());
+      }
+    } else {
+      Log.d(TAG, "Requiring RECORD_AUDIO permission to continue");
+    }
+  }
+
+  public int calculateOrientationHint() {
+    DisplayMetrics dm = new DisplayMetrics();
+    Camera.CameraInfo info = new Camera.CameraInfo();
+    Camera.getCameraInfo(defaultCameraId, info);
+    int cameraRotationOffset = info.orientation;
+    Activity activity = getActivity();
+
+    activity.getWindowManager().getDefaultDisplay().getMetrics(dm);
+    int currentScreenRotation = activity.getWindowManager().getDefaultDisplay().getRotation();
+
+    int degrees = 0;
+    switch (currentScreenRotation) {
+      case Surface.ROTATION_0:
+        degrees = 0;
+        break;
+      case Surface.ROTATION_90:
+        degrees = 90;
+        break;
+      case Surface.ROTATION_180:
+        degrees = 180;
+        break;
+      case Surface.ROTATION_270:
+        degrees = 270;
+        break;
+    }
+
+    int orientation;
+    if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
+      orientation = (cameraRotationOffset + degrees) % 360;
+      if (degrees != 0) {
+        orientation = (360 - orientation) % 360;
+      }
+    } else {
+      orientation = (cameraRotationOffset - degrees + 360) % 360;
+    }
+    Log.w(TAG, "************orientationHint ***********= " + orientation);
+
+    return orientation;
+  }
+
+  public void stopRecord() {
+    Log.d(TAG, "stopRecord");
+    try {
+      mRecorder.stop();
+      mRecorder.reset();   // clear recorder configuration
+      mRecorder.release(); // release the recorder object
+      mRecorder = null;
+      mCamera.lock();
+      Camera.Parameters cameraParams = mCamera.getParameters();
+      cameraParams.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+      mCamera.setParameters(cameraParams);
+      mCamera.startPreview();
+      eventListener.onStopRecordVideo(this.recordFilePath);
+    } catch (Exception e) {
+      eventListener.onStopRecordVideoError(e.getMessage());
+    }
+  }
+
+  public void muteStream(boolean mute, Activity activity) {
+    AudioManager audioManager = ((AudioManager)activity.getApplicationContext().getSystemService(Context.AUDIO_SERVICE));
+    int direction = mute ? audioManager.ADJUST_MUTE : audioManager.ADJUST_UNMUTE;
+  }
+
   public void setFocusArea(final int pointX, final int pointY, final Camera.AutoFocusCallback callback) {
     if (mCamera != null) {
-
       mCamera.cancelAutoFocus();
 
       Camera.Parameters parameters = mCamera.getParameters();
 
-      Rect focusRect = calculateTapArea(pointX, pointY, 1f);
+      Rect focusRect = calculateTapArea(pointX, pointY);
       parameters.setFocusMode(Camera.Parameters.FOCUS_MODE_AUTO);
       parameters.setFocusAreas(Arrays.asList(new Camera.Area(focusRect, 1000)));
 
       if (parameters.getMaxNumMeteringAreas() > 0) {
-        Rect meteringRect = calculateTapArea(pointX, pointY, 1.5f);
-        parameters.setMeteringAreas(Arrays.asList(new Camera.Area(meteringRect, 1000)));
+        parameters.setMeteringAreas(Arrays.asList(new Camera.Area(focusRect, 1000)));
       }
 
       try {
@@ -732,7 +873,7 @@ public class CameraActivity extends Fragment {
     }
   }
 
-  private Rect calculateTapArea(float x, float y, float coefficient) {
+  private Rect calculateTapArea(float x, float y) {
     if (x < 100) {
       x = 100;
     }
@@ -751,5 +892,22 @@ public class CameraActivity extends Fragment {
       Math.round((x + 100) * 2000 / width - 1000),
       Math.round((y + 100) * 2000 / height - 1000)
     );
+  }
+
+  static Camera.Size getBestResolution(Camera.Parameters cp) {
+    List<Camera.Size> sl = cp.getSupportedVideoSizes();
+
+    if (sl == null)
+      sl = cp.getSupportedPictureSizes();
+
+    Camera.Size large = sl.get(0);
+
+    for (Camera.Size s : sl) {
+      if ((large.height * large.width) < (s.height * s.width)) {
+        large = s;
+      }
+    }
+
+    return large;
   }
 }

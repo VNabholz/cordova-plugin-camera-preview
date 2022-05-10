@@ -308,20 +308,24 @@
 }
 
 - (void) getFlashMode:(CDVInvokedUrlCommand*)command {
-
     CDVPluginResult *pluginResult;
 
     if (self.sessionManager != nil) {
+        BOOL isTorchActive = [self.sessionManager isTorchActive];
         NSInteger flashMode = [self.sessionManager getFlashMode];
         NSString * sFlashMode;
-        if (flashMode == 0) {
-            sFlashMode = @"off";
-        } else if (flashMode == 1) {
-            sFlashMode = @"on";
-        } else if (flashMode == 2) {
-            sFlashMode = @"auto";
+        if (isTorchActive) {
+          sFlashMode = @"torch";
         } else {
-            sFlashMode = @"unsupported";
+          if (flashMode == 0) {
+              sFlashMode = @"off";
+          } else if (flashMode == 1) {
+              sFlashMode = @"on";
+          } else if (flashMode == 2) {
+              sFlashMode = @"auto";
+          } else {
+              sFlashMode = @"unsupported";
+          }
         }
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:sFlashMode ];
     } else {
@@ -574,7 +578,7 @@
             NSMutableArray *params = [[NSMutableArray alloc] init];
             [params addObject:base64Image];
             CDVPluginResult *pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:params];
-            [pluginResult setKeepCallbackAsBool:true];
+            [pluginResult setKeepCallbackAsBool:false];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
         });
     } else {
@@ -847,7 +851,6 @@
             CGImageRelease(finalImage); // release CGImageRef to remove memory leaks
 
             CDVPluginResult *pluginResult;
-
             if (self.storeToFile) {
                 NSData *data = UIImageJPEGRepresentation([UIImage imageWithCGImage:resultFinalImage], (CGFloat) quality);
                 CGImageSourceRef source = CGImageSourceCreateWithData((__bridge CFDataRef) data, NULL);
@@ -860,6 +863,7 @@
 
                 NSMutableDictionary *EXIFDictionary = [[metadataAsMutable objectForKey:(NSString *)kCGImagePropertyExifDictionary]mutableCopy];
                 NSMutableDictionary *GPSDictionary = [[metadataAsMutable objectForKey:(NSString *)kCGImagePropertyGPSDictionary]mutableCopy];
+
                 if(!EXIFDictionary) {
                     //if the image does not have an EXIF dictionary (not all images do), then create one for us to use
                     EXIFDictionary = [NSMutableDictionary dictionary];
@@ -883,6 +887,7 @@
 
                 NSString *dateTimeString=[dateTimeformatter stringFromDate:date];
 
+
                 [GPSDictionary setObject:[timeformatter stringFromDate:date] forKey:(NSString*)kCGImagePropertyGPSTimeStamp];
                 [GPSDictionary setObject:[dateformatter stringFromDate:date] forKey:(NSString*)kCGImagePropertyGPSDateStamp];
 
@@ -891,7 +896,7 @@
                     [GPSDictionary setValue:[NSNumber numberWithFloat:self.longitude] forKey:(NSString*)kCGImagePropertyGPSLongitude];
                     [GPSDictionary setValue:self.latitudeRef forKey:(NSString*)kCGImagePropertyGPSLatitudeRef];
                     [GPSDictionary setValue:self.longitudeRef forKey:(NSString*)kCGImagePropertyGPSLongitudeRef];
-                  [GPSDictionary setValue:[NSNumber numberWithFloat:self.altitude] forKey:(NSString*)kCGImagePropertyGPSAltitude];
+                    [GPSDictionary setValue:[NSNumber numberWithFloat:self.altitude] forKey:(NSString*)kCGImagePropertyGPSAltitude];
                 }
 
                 [EXIFDictionary setValue:dateTimeString forKey:(NSString*)kCGImagePropertyExifDateTimeOriginal];
@@ -923,13 +928,13 @@
                 }
 
                 NSString* filePath = [self getTempFilePath:@"jpg"];
+                NSError *err;
 
                 //cleanup
                 CFRelease(destination);
                 CFRelease(source);
 
-                NSError *err;
-
+//                 if (![data writeToFile:filePath options:NSAtomicWrite error:&err]) {
                 if (![dest_data writeToFile:filePath options:NSAtomicWrite error:&err]) {
                     pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_IO_EXCEPTION messageAsString:[err localizedDescription]];
                 } else {
@@ -944,9 +949,11 @@
 
             CGImageRelease(resultFinalImage); // release CGImageRef to remove memory leaks
 
-            [pluginResult setKeepCallbackAsBool:true];
+//             [pluginResult setKeepCallbackAsBool:true];
+            [pluginResult setKeepCallbackAsBool:self.cameraRenderController.tapToTakePicture];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
         }
+
     }];
 }
 

@@ -158,6 +158,7 @@ class Preview extends RelativeLayout implements SurfaceHolder.Callback {
     }
 
     facing = info.facing;
+
     if (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
       displayOrientation = (info.orientation + degrees) % 360;
       displayOrientation = (360 - displayOrientation) % 360;
@@ -167,6 +168,8 @@ class Preview extends RelativeLayout implements SurfaceHolder.Callback {
 
     nativeOrientation = info.orientation;
     Log.d(TAG, (info.facing == Camera.CameraInfo.CAMERA_FACING_FRONT ? "front" : "back") + " camera is oriented -" + info.orientation + "deg from natural");
+    Log.d(TAG, "rotating preview " + displayOrientation + "deg");
+
     mCamera.setDisplayOrientation(displayOrientation);
   }
 
