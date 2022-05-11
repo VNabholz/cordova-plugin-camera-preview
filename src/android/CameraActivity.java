@@ -62,19 +62,12 @@ public class CameraActivity extends Fragment {
 
   public interface CameraPreviewListener {
     void onPictureTaken(String originalPicture);
-
     void onPictureTakenError(String message);
-
     void onSnapshotTaken(String originalPicture);
-
     void onSnapshotTakenError(String message);
-
     void onFocusSet(int pointX, int pointY);
-
     void onFocusSetError(String message);
-
     void onBackButton();
-
     void onCameraStarted();
     void onStartRecordVideo();
     void onStartRecordVideoError(String message);
@@ -122,7 +115,6 @@ public class CameraActivity extends Fragment {
   private String recordFilePath;
 
   public void setEventListener(CameraPreviewListener listener){
-
     eventListener = listener;
   }
 
@@ -348,10 +340,12 @@ public class CameraActivity extends Fragment {
     super.onPause();
 
     // Because the Camera object is a shared resource, it's very important to release it when the activity is paused.
-    // The camera release it was here but now I moved the release to be executed when the surface is distroyed.
-
     if (mCamera != null) {
       setDefaultCameraId();
+      mPreview.setCamera(null, -1);
+      mCamera.setPreviewCallback(null);
+      mCamera.release();
+      mCamera = null;
     }
 
     Activity activity = getActivity();

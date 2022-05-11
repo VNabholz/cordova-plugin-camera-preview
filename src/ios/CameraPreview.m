@@ -934,7 +934,6 @@
                 CFRelease(destination);
                 CFRelease(source);
 
-//                 if (![data writeToFile:filePath options:NSAtomicWrite error:&err]) {
                 if (![dest_data writeToFile:filePath options:NSAtomicWrite error:&err]) {
                     pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_IO_EXCEPTION messageAsString:[err localizedDescription]];
                 } else {
@@ -949,7 +948,6 @@
 
             CGImageRelease(resultFinalImage); // release CGImageRef to remove memory leaks
 
-//             [pluginResult setKeepCallbackAsBool:true];
             [pluginResult setKeepCallbackAsBool:self.cameraRenderController.tapToTakePicture];
             [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
         }
