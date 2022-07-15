@@ -109,20 +109,35 @@
         self.cameraRenderController.view.frame = CGRectMake(x, y, width, height);
         self.cameraRenderController.delegate = self;
 
-        [self.viewController addChildViewController:self.cameraRenderController];
+        //useless - GV
+        //[self.viewController addChildViewController:self.cameraRenderController];
 
         if (toBack) {
             // display the camera below the webview
 
-            // make transparent
+            // make webView transparent
             self.webView.opaque = NO;
             self.webView.backgroundColor = [UIColor clearColor];
 
-            [self.webView.superview addSubview:self.cameraRenderController.view];
-            [self.webView.superview bringSubviewToFront:self.webView];
+            for (UIView *i in self.viewController.view.subviews) {
+                NSString *nameOfClass = NSStringFromClass([i class]);
+                NSLog(@"Class of subview is %@",nameOfClass);
+                if ([nameOfClass isEqualToString:@"WKScrollView"]) {
+                    self.webView = i;
+                }
+            }
+
+            [self.viewController.view addSubview:self.cameraRenderController.view];
+            [self.viewController.view bringSubviewToFront:self.webView];
+            // make every subview transparent - GV
+            for(UIView *v in [self.webView allSubViews])
+            {
+                v.opaque = NO;
+                v.backgroundColor = [[UIColor clearColor] colorWithAlphaComponent:0.0f];
+            }
         } else {
             self.cameraRenderController.view.alpha = alpha;
-            [self.webView.superview insertSubview:self.cameraRenderController.view aboveSubview:self.webView];
+            [self.viewController.view insertSubview:self.cameraRenderController.view aboveSubview:self.webView];
         }
 
         // start location manager to receive first location

@@ -363,8 +363,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
           } else {
             // Default
             webViewParent = curParent;
-
-            ((ViewGroup) curParent).bringToFront();
+            rootParent.bringChildToFront(((View) webViewParent));
           }
 
         } else {
@@ -411,7 +410,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     data.put(originalPicture);
 
     PluginResult pluginResult = new PluginResult(PluginResult.Status.OK, data);
-    pluginResult.setKeepCallback(false);
+    pluginResult.setKeepCallback(true);
     takeSnapshotCallbackContext.sendPluginResult(pluginResult);
     takeSnapshotCallbackContext = null;
   }
