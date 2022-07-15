@@ -4,6 +4,9 @@
 - [View Diff](https://github.com/cordova-plugin-camera-preview/cordova-plugin-camera-preview/compare/v0.12.3...master)
 - [#676](https://github.com/cordova-plugin-camera-preview/cordova-plugin-camera-preview/pull/676) - Ensure `toBack` behaves correctly on both Android and iOS
 
+## v0.16
+Improved the setJpegQuality functionality
+
 ## v0.15
 
 ## v0.14
