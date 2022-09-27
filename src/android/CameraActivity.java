@@ -294,6 +294,8 @@ public class CameraActivity extends Fragment {
   public void onResume() {
     super.onResume();
 
+    setDefaultCameraId();
+
     mCamera = Camera.open(defaultCameraId);
 
     if (cameraParameters != null) {
