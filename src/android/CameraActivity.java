@@ -711,6 +711,7 @@ public class CameraActivity extends Fragment {
             params.setJpegQuality(quality);
           }
 
+          params.setRotation(mPreview.cameraPosition);
           mCamera.setParameters(params);
           mCamera.takePicture(shutterCallback, null, jpegPictureCallback);
         }
