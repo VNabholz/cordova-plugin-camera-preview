@@ -83,6 +83,7 @@ class Preview extends RelativeLayout implements SurfaceHolder.Callback {
     if (this.facing == Camera.CameraInfo.CAMERA_FACING_FRONT) {
       cameraPositionDegrees = (360 - cameraPositionDegrees) % 360;
       cameraPosition = (orientation + cameraPositionDegrees) % 360;
+      cameraPosition = cameraPosition + 180 > 360 ? cameraPosition - 180 : cameraPosition + 180;
       cameraPosition = (360 - cameraPosition) % 360;  // compensate the mirror
 
     } else {  // back-facing
