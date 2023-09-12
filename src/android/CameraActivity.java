@@ -465,15 +465,16 @@ public class CameraActivity extends Fragment {
       Log.d(TAG, "CameraPreview jpegPictureCallback");
 
       try {
-         // this implementation is no longer required
-         // The image rotation will be made directly from the mobile device camera
         if (!disableExifHeaderStripping) {
           Matrix matrix = new Matrix();
-          if (cameraCurrentlyLocked == Camera.CameraInfo.CAMERA_FACING_FRONT) {
-            matrix.preScale(1.0f, -1.0f);
-          }
 
-          matrix.preRotate(mPreview.cameraPosition);
+          ExifInterface exifInterface2 = new ExifInterface(new ByteArrayInputStream(data));
+          int rotation = exifInterface2.getAttributeInt(ExifInterface.TAG_ORIENTATION, ExifInterface.ORIENTATION_NORMAL);
+          int rotationInDegrees = exifToDegrees(rotation);
+
+          if (rotation != 0f) {
+            matrix.postRotate(rotationInDegrees);
+          }
 
           // Check if matrix has changed. In that case, apply matrix and override data
           if (!matrix.isIdentity()) {
@@ -495,7 +496,6 @@ public class CameraActivity extends Fragment {
           FileOutputStream out = new FileOutputStream(path);
           out.write(data);
           out.close();
-          eventListener.onPictureTaken(path);
 
           SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
           String dateTime = dateFormat.format(Calendar.getInstance().getTime());
@@ -522,6 +522,8 @@ public class CameraActivity extends Fragment {
           }
 
           exifInterface.saveAttributes();
+
+          eventListener.onPictureTaken(path);
         }
 
       } catch (OutOfMemoryError e) {
