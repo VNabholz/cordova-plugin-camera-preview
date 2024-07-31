@@ -13,6 +13,8 @@
 - [#676](https://github.com/cordova-plugin-camera-preview/cordova-plugin-camera-preview/pull/676) - Ensure `toBack` behaves correctly on Android
 
 
+## v0.19
+Merge with the official repository
 ## v0.18
 The image rotation will be made directly from the mobile device camera
 The function 'disableExifHeaderStripping' is no longer required
