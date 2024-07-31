@@ -532,6 +532,7 @@ public class CameraActivity extends Fragment {
 
           eventListener.onPictureTaken(path);
         }
+        Log.d(TAG, "CameraPreview pictureTakenHandler called back");
 
       } catch (OutOfMemoryError e) {
         // most likely failed to allocate memory for rotateBitmap
@@ -722,7 +723,6 @@ public class CameraActivity extends Fragment {
               params.setJpegQuality(quality);
             }
             params.setRotation(mPreview.cameraPosition); // the original one, from our repo
-            params.setRotation(mPreview.getDisplayOrientation());
 
             mCamera.setParameters(params);
             mCamera.takePicture(shutterCallback, null, jpegPictureCallback);
