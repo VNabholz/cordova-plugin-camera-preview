@@ -92,7 +92,11 @@ public class CameraActivity extends Fragment {
 
   // The first rear facing camera
   private int defaultCameraId;
+  private int defaultCameraId2;
+  private int defaultFrontCameraId;
+  private int defaultBackCameraId;
   public String defaultCamera;
+  public String defaultCamera2;
 
   public boolean tapToTakePicture;
   public boolean dragEnabled;
@@ -273,31 +277,52 @@ public class CameraActivity extends Fragment {
     });
   }
 
-  private void setDefaultCameraId() {
+
+  private void getCameraId() {
     // Find the total number of cameras available
     numberOfCameras = Camera.getNumberOfCameras();
 
-    int facing = "front".equals(defaultCamera) ? Camera.CameraInfo.CAMERA_FACING_FRONT : Camera.CameraInfo.CAMERA_FACING_BACK;
-
+    boolean foundBack = false;
+    boolean foundFront = false;
     // Find the ID of the default camera
     Camera.CameraInfo cameraInfo = new Camera.CameraInfo();
     for (int i = 0; i < numberOfCameras; i++) {
       Camera.getCameraInfo(i, cameraInfo);
-      if (cameraInfo.facing == facing) {
-        defaultCameraId = i;
-        break;
+      Log.d(TAG, "cameraInfoFacing:" + cameraInfo.facing);
+      if (Camera.CameraInfo.CAMERA_FACING_FRONT == cameraInfo.facing && !foundFront) {
+        defaultFrontCameraId = i;
+        foundFront = true;
       }
+      if (Camera.CameraInfo.CAMERA_FACING_BACK == cameraInfo.facing && !foundBack) {
+        defaultBackCameraId = i;
+        foundBack = true;
+      }
+    }
+  }
+
+  private void setDefaultCameraId() {
+    getCameraId();
+
+    if("front".equals(defaultCamera)){
+      defaultCameraId = defaultFrontCameraId;
+    } else {
+      defaultCameraId = defaultBackCameraId;
+    }
+
+    if("front".equals(defaultCamera2)){
+      defaultCameraId2 = defaultFrontCameraId;
+    } else {
+      defaultCameraId2 = defaultBackCameraId;
     }
   }
 
   @Override
   public void onResume() {
     super.onResume();
-
     setDefaultCameraId();
 
     try {
-      mCamera = Camera.open(defaultCameraId);
+      mCamera = Camera.open(defaultCameraId2);
 
       if (cameraParameters != null) {
         mCamera.setParameters(cameraParameters);
@@ -385,7 +410,15 @@ public class CameraActivity extends Fragment {
 
       Log.d(TAG, "cameraCurrentlyLocked := " + Integer.toString(cameraCurrentlyLocked));
       try {
-        cameraCurrentlyLocked = (cameraCurrentlyLocked + 1) % numberOfCameras;
+
+        if(cameraCurrentlyLocked == defaultFrontCameraId){
+          defaultCamera = "back";
+          cameraCurrentlyLocked = defaultBackCameraId;
+        } else {
+          defaultCamera = "front";
+          cameraCurrentlyLocked = defaultFrontCameraId;
+        }
+
         Log.d(TAG, "cameraCurrentlyLocked new: " + cameraCurrentlyLocked);
       } catch (Exception exception) {
         Log.d(TAG, exception.getMessage());
