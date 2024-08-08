@@ -4,7 +4,10 @@
 - [View Diff](https://github.com/cordova-plugin-camera-preview/cordova-plugin-camera-preview/compare/v0.13.0...master)
 - Nothing yet
 
-## v0.19.0 - July 23, 2024 - LATEST RELEASED VERSION
+## v0.20.0
+Fixed the camera selection on switchCamera function
+
+## v0.19.0
 - [View Diff](https://github.com/cordova-plugin-camera-preview/cordova-plugin-camera-preview/compare/v0.12.3...v0.13.0)
 - [#699](https://github.com/cordova-plugin-camera-preview/cordova-plugin-camera-preview/commit/21961100181c97dcbf59e72749d6cf2add7f05ef) - Null pointer exception fixes
 - [#689](https://github.com/cordova-plugin-camera-preview/cordova-plugin-camera-preview/pull/689) - Improve error handling for Android
