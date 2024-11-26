@@ -4,6 +4,9 @@
 - [View Diff](https://github.com/cordova-plugin-camera-preview/cordova-plugin-camera-preview/compare/v0.13.0...master)
 - [#701](https://github.com/cordova-plugin-camera-preview/cordova-plugin-camera-preview/pull/701) - Fix Camera preview not going to back in Ionic Capacitor
 
+## v0.21.0
+Merged with the main branch and increased the version of play services location
+
 ## v0.20.0
 Fixed the camera selection on switchCamera function
 
