@@ -30,7 +30,7 @@
 
     <preference name="ANDROID_SUPPORT_LIBRARY_VERSION" default="26+"/>
     <framework src="androidx.exifinterface:exifinterface:1.2.0" />
-    <framework src="com.google.android.gms:play-services-location:11.6.2" />
+    <framework src="com.google.android.gms:play-services-location:19.0.0" />
 
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="CameraPreview">
