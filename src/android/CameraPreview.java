@@ -1216,7 +1216,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
 
     ContentResolver cr = this.cordova.getActivity().getApplicationContext().getContentResolver();
 
-    String title = "Saved From Glance";
+    String title = "Saved From Glance" + System.currentTimeMillis();
     String description = title;
 
     ContentValues values = new ContentValues();
