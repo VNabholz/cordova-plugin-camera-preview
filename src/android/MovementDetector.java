@@ -80,6 +80,10 @@ public class MovementDetector extends CordovaPlugin implements SensorEventListen
   private static final int _DATA_Y = 1;
   private static final int _DATA_Z = 2;
   private int ORIENTATION_UNKNOWN = -1;
+  
+  // Variables for orientation stabilization
+  private long lastOrientationChangeTime = 0;
+  private static final long ORIENTATION_CHANGE_DELAY = 300; // 300ms delay for stabilization - faster for small angles
 
   @Override
   public void onSensorChanged(SensorEvent event) {
@@ -91,8 +95,21 @@ public class MovementDetector extends CordovaPlugin implements SensorEventListen
     float magnitude = X * X + Y * Y;
     int tempOrientRounded = 0;
 
-    // Don't trust the angle if the magnitude is small compared to the y value
-    if (magnitude * 4 >= Z * Z) {
+    // Calculate total acceleration to determine if device is truly flat
+    float totalAcceleration = (float) Math.sqrt(X * X + Y * Y + Z * Z);
+    float tiltAngle = (float) Math.toDegrees(Math.acos(Math.abs(Z) / totalAcceleration));
+    
+    // More precise flat detection: device is flat only if tilt angle is less than 15 degrees
+    boolean isDeviceFlat = tiltAngle < 15.0f;
+    
+    // Log detailed sensor data for debugging
+    Log.d(TAG, String.format("Sensor data - X: %.2f, Y: %.2f, Z: %.2f", X, Y, Z));
+    Log.d(TAG, String.format("Total acceleration: %.2f, Tilt angle: %.2f°", totalAcceleration, tiltAngle));
+    Log.d(TAG, "Device flat: " + isDeviceFlat);
+
+    // Use a more lenient threshold for orientation calculation
+    // Only skip orientation calculation if device is truly flat (very small tilt angle)
+    if (!isDeviceFlat) {
       float OneEightyOverPi = 57.29577957855f;
       float angle = (float) Math.atan2(-Y, X) * OneEightyOverPi;
       orientation = 90 - (int) Math.round(angle);
@@ -105,32 +122,69 @@ public class MovementDetector extends CordovaPlugin implements SensorEventListen
       while (orientation < 0) {
         orientation += 360;
       }
-
     }
 
     //^^ thanks to google for that code
     //now we must figure out which orientation based on the degrees
 
-    if (orientation != mOrientationDeg) {
+    if (orientation != mOrientationDeg || isDeviceFlat) {
       mOrientationDeg = orientation;
-      //figure out actual orientation
-      if (orientation == -1) {//basically flat
-        tempOrientRounded = 1;//portrait
-      } else if (orientation <= 45 || orientation > 315) {//round to 0
-        tempOrientRounded = 1;//portrait
-      } else if (orientation > 45 && orientation <= 135) {//round to 90
-        tempOrientRounded = 4; //lsleft huawei
-      } else if (orientation > 135 && orientation <= 225) {//round to 180
-        tempOrientRounded = 3; //upside down
-      } else if (orientation > 225 && orientation <= 315) {//round to 270
-        tempOrientRounded = 2;//lsright
+      
+      // Log raw orientation for debugging
+      Log.d(TAG, "Raw sensor orientation: " + orientation + "°");
+      
+      //figure out actual orientation using a more adaptive approach
+      if (isDeviceFlat) {
+        // Device is truly flat - keep current orientation or default to portrait if none set
+        tempOrientRounded = (mOrientationRounded != 0) ? mOrientationRounded : 1;
+        Log.d(TAG, "Device is flat (tilt: " + String.format("%.1f", tiltAngle) + "°), keeping orientation: " + ((tempOrientRounded - 1) * 90) + "°");
+      } else if (orientation == -1) {
+        // Fallback case - shouldn't happen with new logic
+        tempOrientRounded = (mOrientationRounded != 0) ? mOrientationRounded : 1;
+        Log.d(TAG, "Unknown orientation, keeping current: " + ((tempOrientRounded - 1) * 90) + "°");
+      } else {
+        // Calculate the closest orientation using distance-based approach
+        int[] orientationTargets = {0, 90, 180, 270}; // portrait, landscape-left, upside-down, landscape-right
+        int[] orientationCodes = {1, 4, 3, 2}; // corresponding codes
+        
+        int closestIndex = 0;
+        int minDistance = Integer.MAX_VALUE;
+        
+        for (int i = 0; i < orientationTargets.length; i++) {
+          int target = orientationTargets[i];
+          int distance = Math.min(
+            Math.abs(orientation - target),
+            Math.min(Math.abs(orientation - target - 360), Math.abs(orientation - target + 360))
+          );
+          
+          if (distance < minDistance) {
+            minDistance = distance;
+            closestIndex = i;
+          }
+        }
+        
+        // More sensitive threshold - change orientation if within 45 degrees of target
+        if (minDistance <= 45) {
+          tempOrientRounded = orientationCodes[closestIndex];
+          Log.d(TAG, "Closest orientation: " + orientationTargets[closestIndex] + "° (distance: " + minDistance + "°)");
+        } else {
+          // Too far from any target, keep current orientation
+          tempOrientRounded = mOrientationRounded;
+          Log.d(TAG, "Orientation too ambiguous (min distance: " + minDistance + "°), keeping current: " + ((mOrientationRounded - 1) * 90) + "°");
+        }
       }
 
       if (mOrientationRounded != tempOrientRounded) {
-        //Orientation changed, handle the change here
-        mOrientationRounded = tempOrientRounded;
-        for (Listener listener : mListeners) {
-          listener.onMotionDetected((mOrientationRounded - 1) * 90);
+        // Add delay to avoid sudden changes
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastOrientationChangeTime > ORIENTATION_CHANGE_DELAY) {
+          // Orientation changed, handle the change here
+          mOrientationRounded = tempOrientRounded;
+          lastOrientationChangeTime = currentTime;
+          for (Listener listener : mListeners) {
+            listener.onMotionDetected((mOrientationRounded - 1) * 90);
+          }
+          Log.d(TAG, "Orientation changed from " + orientation + "° (raw) to: " + ((mOrientationRounded - 1) * 90) + "° (rounded)");
         }
       }
     }
