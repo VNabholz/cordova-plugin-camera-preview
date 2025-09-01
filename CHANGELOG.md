@@ -4,6 +4,10 @@
 - [View Diff](https://github.com/cordova-plugin-camera-preview/cordova-plugin-camera-preview/compare/v0.13.0...master)
 - [#701](https://github.com/cordova-plugin-camera-preview/cordova-plugin-camera-preview/pull/701) - Fix Camera preview not going to back in Ionic Capacitor
 
+
+## v0.23.0
+Improved the movement detector algorithm to fix the orientation when the device it's almost flat.
+
 ## v0.22.0
 Made the photo name unique by adding a timestamp to the name
 
