@@ -136,20 +136,22 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }else if (START_RECORD_VIDEO_ACTION.equals(action)) {
       String[] videoPermissions = getVideoPermissions();
 
-      boolean allPermissionsGranted = true;
+      // Filter out permissions that are already granted
+      ArrayList<String> missingPermissions = new ArrayList<>();
       for (String permission : videoPermissions) {
         if (!cordova.hasPermission(permission)) {
-          allPermissionsGranted = false;
-          break;
+          missingPermissions.add(permission);
         }
       }
 
-      if (allPermissionsGranted) {
+      if (missingPermissions.isEmpty()) {
+        // All permissions already granted
         return startRecordVideo(args.getString(0), args.getInt(1), args.getInt(2), args.getInt(3), args.getBoolean(4), callbackContext);
       } else {
+        // Request only missing permissions
         this.execCallback = callbackContext;
         this.execArgs = args;
-        cordova.requestPermissions(this, VID_REQ_CODE, videoPermissions);
+        cordova.requestPermissions(this, VID_REQ_CODE, missingPermissions.toArray(new String[0]));
         return true;
       }
     } else if (STOP_RECORD_VIDEO_ACTION.equals(action)) {
