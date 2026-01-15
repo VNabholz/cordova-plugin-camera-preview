@@ -7,6 +7,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.ContextWrapper;
 import android.content.pm.PackageManager;
+import androidx.core.content.ContextCompat;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
 import android.hardware.Camera;
@@ -136,19 +137,32 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }else if (START_RECORD_VIDEO_ACTION.equals(action)) {
       String[] videoPermissions = getVideoPermissions();
 
-      // Filter out permissions that are already granted
+      // Filter out permissions that are already granted using native Android API
       ArrayList<String> missingPermissions = new ArrayList<>();
+      Context context = cordova.getActivity().getApplicationContext();
+      
       for (String permission : videoPermissions) {
-        if (!cordova.hasPermission(permission)) {
+        // Use native Android check for accurate permission status
+        boolean hasPermission = true;
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+          hasPermission = (ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED);
+        } else {
+          // For older Android versions, use Cordova's check
+          hasPermission = cordova.hasPermission(permission);
+        }
+        
+        if (!hasPermission) {
           missingPermissions.add(permission);
         }
       }
 
       if (missingPermissions.isEmpty()) {
-        // All permissions already granted
+        // All permissions already granted - proceed directly without requesting
+        Log.d(TAG, "All video permissions already granted, starting recording");
         return startRecordVideo(args.getString(0), args.getInt(1), args.getInt(2), args.getInt(3), args.getBoolean(4), callbackContext);
       } else {
         // Request only missing permissions
+        Log.d(TAG, "Requesting missing video permissions: " + missingPermissions.toString());
         this.execCallback = callbackContext;
         this.execArgs = args;
         cordova.requestPermissions(this, VID_REQ_CODE, missingPermissions.toArray(new String[0]));
